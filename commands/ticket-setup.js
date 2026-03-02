@@ -19,16 +19,24 @@ async function execute(interaction, adminRoleName) {
     });
   }
 
-  const intakeChannel = interaction.options.getChannel("intake_channel", true);
-  const staffLogChannel = interaction.options.getChannel("staff_log_channel");
-  const archiveChannel = interaction.options.getChannel("archive_channel");
-  const generalRole = interaction.options.getString("general_staff_role") || "Staff";
-  const generalCount = interaction.options.getInteger("general_staff_count") ?? 2;
-  const fablabRole = interaction.options.getString("fablab_staff_role") || "Fablab Staff";
-  const fablabCount = interaction.options.getInteger("fablab_staff_count") ?? 1;
-  const assignmentMode = interaction.options.getString("assignment_mode") || "roundRobin";
-
   const config = ticketConfig.loadConfig();
+
+  const intakeChannel = interaction.options.getChannel("intake_channel") ?? (config.intakeChannelId && guild.channels.cache.get(config.intakeChannelId));
+  const staffLogChannel = interaction.options.getChannel("staff_log_channel") ?? (config.staffLogChannelId && guild.channels.cache.get(config.staffLogChannelId));
+  const archiveChannel = interaction.options.getChannel("archive_channel") ?? (config.ticketArchiveChannelId && guild.channels.cache.get(config.ticketArchiveChannelId));
+  const generalRole = interaction.options.getString("general_staff_role") ?? config.generalStaffRoleName;
+  const generalCount = interaction.options.getInteger("general_staff_count") ?? config.generalStaffCount;
+  const fablabRole = interaction.options.getString("fablab_staff_role") ?? config.fablabStaffRoleName;
+  const fablabCount = interaction.options.getInteger("fablab_staff_count") ?? config.fablabStaffCount;
+  const assignmentMode = interaction.options.getString("assignment_mode") ?? config.assignmentMode;
+
+  if (!intakeChannel) {
+    return interaction.reply({
+      content: "Provide `intake_channel` or set `TICKET_INTAKE_CHANNEL_ID` in .env / tickets/config.json first.",
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
   config.intakeChannelId = intakeChannel.id;
   config.staffLogChannelId = staffLogChannel?.id ?? "";
   config.ticketArchiveChannelId = archiveChannel?.id ?? "";
@@ -39,15 +47,27 @@ async function execute(interaction, adminRoleName) {
   config.assignmentMode = ["roundRobin", "random"].includes(assignmentMode) ? assignmentMode : "roundRobin";
   ticketConfig.saveConfig(config);
 
-  const hasButton = interaction.options.getBoolean("post_intake_button") ?? true;
+  const hasButton = interaction.options.getBoolean("post_intake_button") ?? config.postIntakeButton ?? true;
   if (hasButton && intakeChannel) {
     try {
+      const messages = await intakeChannel.messages.fetch({ limit: 100 });
+      const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+      const recent = messages.filter((m) => m.createdTimestamp > twoWeeksAgo);
+      const old = messages.filter((m) => m.createdTimestamp <= twoWeeksAgo);
+      if (recent.size > 0) await intakeChannel.bulkDelete(recent);
+      for (const [, msg] of old) {
+        try {
+          await msg.delete();
+        } catch {
+          // skip if can't delete (e.g. missing permissions)
+        }
+      }
       await intakeChannel.send({
         content: "**Submit a request**\nClick the button below or use `/ticket` to open a new ticket.",
         components: [buildIntakeButton()],
       });
     } catch (err) {
-      console.warn("Could not post intake button:", err.message);
+      console.warn("Could not clear/post intake button:", err.message);
     }
   }
 
@@ -64,9 +84,8 @@ module.exports = {
     .addChannelOption((o) =>
       o
         .setName("intake_channel")
-        .setDescription("Channel for ticket intake (e.g. #submit-a-request)")
+        .setDescription("Channel for ticket intake (uses config if omitted)")
         .addChannelTypes(ChannelType.GuildText)
-        .setRequired(true)
     )
     .addChannelOption((o) =>
       o

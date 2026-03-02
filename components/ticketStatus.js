@@ -1,8 +1,7 @@
 const ticketConfig = require("../lib/ticketConfig");
 const ticketManager = require("../lib/ticketManager");
-const { canUseAdminCommand } = require("../lib/auth");
 
-const ARCHIVABLE_STATUSES = ["Completed", "Denied / Closed"];
+const ARCHIVABLE_STATUSES = ["Completed"];
 
 async function handleStatusSelect(interaction) {
   if (!interaction.isStringSelectMenu()) return false;
@@ -12,14 +11,12 @@ async function handleStatusSelect(interaction) {
   const ticketId = parseInt(match[1], 10);
   const newStatus = interaction.values[0];
 
-  const adminRoleName = process.env.ADMIN_ROLE_NAME || "Admin";
-  const isStaff =
-    canUseAdminCommand(interaction.member, interaction.guild, adminRoleName) ||
-    interaction.member.roles.cache.some(
-      (r) =>
-        r.name === (ticketConfig.loadConfig().generalStaffRoleName || "Staff") ||
-        r.name === (ticketConfig.loadConfig().fablabStaffRoleName || "Fablab Staff")
-    );
+  const config = ticketConfig.loadConfig();
+  const isStaff = interaction.member.roles.cache.some(
+    (r) =>
+      r.name === (config.generalStaffRoleName || "Staff") ||
+      r.name === (config.fablabStaffRoleName || "Fablab Staff")
+  );
 
   if (!isStaff) {
     return interaction.reply({
@@ -35,6 +32,8 @@ async function handleStatusSelect(interaction) {
       flags: 64,
     });
   }
+
+  await ticketManager.notifyStaffLogStatusChange(interaction.client, ticket, interaction.user.id);
 
   const embed = ticketManager.buildSummaryEmbed(ticket);
   const row = ticketManager.buildStatusSelect(ticketId);

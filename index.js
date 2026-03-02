@@ -5,6 +5,7 @@ const startSchedule = require("./commands/start-schedule");
 const endSchedule = require("./commands/end-schedule");
 const ticketCommand = require("./commands/ticket");
 const ticketSetup = require("./commands/ticket-setup");
+const ticketStatusCommand = require("./commands/ticket-status");
 const ticketIntake = require("./components/ticketIntake");
 const ticketStatus = require("./components/ticketStatus");
 
@@ -24,6 +25,7 @@ client.once("clientReady", async () => {
     endSchedule.data.toJSON(),
     ticketCommand.data.toJSON(),
     ticketSetup.data.toJSON(),
+    ticketStatusCommand.data.toJSON(),
   ];
 
   try {
@@ -49,6 +51,8 @@ client.on("interactionCreate", async (interaction) => {
       await ticketCommand.execute(interaction);
     } else if (interaction.commandName === "ticket-setup") {
       await ticketSetup.execute(interaction, ADMIN_ROLE_NAME);
+    } else if (interaction.commandName === "ticket-status") {
+      await ticketStatusCommand.execute(interaction);
     }
     return;
   }

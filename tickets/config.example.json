@@ -6,5 +6,6 @@
   "generalStaffCount": 2,
   "fablabStaffRoleName": "Fablab Staff",
   "fablabStaffCount": 1,
-  "assignmentMode": "roundRobin"
+  "assignmentMode": "roundRobin",
+  "postIntakeButton": true
 }
