@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { canUseAdminCommand } = require("../lib/auth");
 const scheduleManager = require("../lib/scheduleManager");
 
@@ -7,7 +7,7 @@ async function execute(interaction, adminRoleName) {
   if (!guild) {
     return interaction.reply({
       content: "This command can only be used in a server.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -15,7 +15,7 @@ async function execute(interaction, adminRoleName) {
   if (!canUseAdminCommand(caller, guild, adminRoleName)) {
     return interaction.reply({
       content: `You need the **${adminRoleName}** role to use this command.`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -23,7 +23,7 @@ async function execute(interaction, adminRoleName) {
 
   await interaction.reply({
     content: "Schedule ended. All scheduled posts cancelled.",
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 }
 
