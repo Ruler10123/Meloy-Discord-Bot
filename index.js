@@ -3,6 +3,10 @@ const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
 const { execute: resetExecute } = require("./commands/reset");
 const startSchedule = require("./commands/start-schedule");
 const endSchedule = require("./commands/end-schedule");
+const ticketCommand = require("./commands/ticket");
+const ticketSetup = require("./commands/ticket-setup");
+const ticketIntake = require("./components/ticketIntake");
+const ticketStatus = require("./components/ticketStatus");
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
@@ -18,6 +22,8 @@ client.once("clientReady", async () => {
     { name: "reset", description: "Kick all members who do not have the admin role" },
     startSchedule.data.toJSON(),
     endSchedule.data.toJSON(),
+    ticketCommand.data.toJSON(),
+    ticketSetup.data.toJSON(),
   ];
 
   try {
@@ -32,14 +38,33 @@ client.once("clientReady", async () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
+  if (interaction.isChatInputCommand()) {
+    if (interaction.commandName === "reset") {
+      await resetExecute(interaction, ADMIN_ROLE_NAME);
+    } else if (interaction.commandName === "start-schedule") {
+      await startSchedule.execute(interaction, ADMIN_ROLE_NAME);
+    } else if (interaction.commandName === "end-schedule") {
+      await endSchedule.execute(interaction, ADMIN_ROLE_NAME);
+    } else if (interaction.commandName === "ticket") {
+      await ticketCommand.execute(interaction);
+    } else if (interaction.commandName === "ticket-setup") {
+      await ticketSetup.execute(interaction, ADMIN_ROLE_NAME);
+    }
+    return;
+  }
 
-  if (interaction.commandName === "reset") {
-    await resetExecute(interaction, ADMIN_ROLE_NAME);
-  } else if (interaction.commandName === "start-schedule") {
-    await startSchedule.execute(interaction, ADMIN_ROLE_NAME);
-  } else if (interaction.commandName === "end-schedule") {
-    await endSchedule.execute(interaction, ADMIN_ROLE_NAME);
+  if (interaction.isButton()) {
+    if (await ticketIntake.handleButton(interaction)) return;
+  }
+
+  if (interaction.isStringSelectMenu()) {
+    if (await ticketIntake.handleTypeSelect(interaction)) return;
+    if (await ticketStatus.handleStatusSelect(interaction)) return;
+  }
+
+  if (interaction.isModalSubmit()) {
+    if (await ticketIntake.handleGeneralModal(interaction)) return;
+    if (await ticketIntake.handleFablabModal(interaction)) return;
   }
 });
 

@@ -20,9 +20,10 @@ async function execute(interaction, adminRoleName) {
   }
 
   const channel = interaction.options.getChannel("channel", true);
-  if (channel.type !== ChannelType.GuildText) {
+  const isPostable = [ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(channel.type);
+  if (!isPostable) {
     return interaction.reply({
-      content: "Please select a text channel.",
+      content: "Please select a text or announcement channel.",
       flags: MessageFlags.Ephemeral,
     });
   }
@@ -44,7 +45,7 @@ module.exports = {
       o
         .setName("channel")
         .setDescription("Channel to post schedule messages to")
-        .addChannelTypes(ChannelType.GuildText)
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
         .setRequired(true)
     ),
   execute,

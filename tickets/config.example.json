@@ -1,0 +1,10 @@
+{
+  "intakeChannelId": "",
+  "staffLogChannelId": "",
+  "ticketArchiveChannelId": "",
+  "generalStaffRoleName": "Staff",
+  "generalStaffCount": 2,
+  "fablabStaffRoleName": "Fablab Staff",
+  "fablabStaffCount": 1,
+  "assignmentMode": "roundRobin"
+}
