@@ -1,0 +1,15 @@
+{
+  "name": "meloy-discord-bot",
+  "version": "1.0.0",
+  "description": "Discord bot with /reset and schedule commands",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
+    "luxon": "^3.4.4",
+    "node-schedule": "^2.1.1"
+  }
+}
